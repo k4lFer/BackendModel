@@ -1,0 +1,51 @@
+﻿using System.Net;
+using App.Domain.User.Entities;
+using App.Interfaces.Common;
+using App.Interfaces.Common.Result;
+using App.Interfaces.Common.Security;
+using App.Interfaces.Ports;
+using App.Interfaces.Ports.User;
+using App.Objects.User.DTOs.Input.Command;
+using App.UseCases.User.Command;
+using Cortex.Mediator.Commands;
+
+namespace App.UseCases.User.Command.CreateUser;
+
+public class CreateUserCommandHandler : ICommandHandler<CreateUserCommand, OutputPort<Guid>>
+{
+    private readonly IUserRepository _userRepository;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IPasswordHasher _passwordHasher;
+    private readonly IInputValidator<CreateUserDto>  _validator;
+    
+    public CreateUserCommandHandler(IUserRepository userRepository,  IInputValidator<CreateUserDto> validator,  IPasswordHasher passwordHasher, IUnitOfWork unitOfWork)
+    {
+        _userRepository = userRepository;
+        _validator = validator;
+        _passwordHasher = passwordHasher;
+        _unitOfWork = unitOfWork;
+    }
+    
+    public async Task<OutputPort<Guid>> Handle(CreateUserCommand command, CancellationToken cancellationToken)
+    {
+        if (!await _validator.ValidateAsync(command.Input, cancellationToken))
+            return OutputPort<Guid>.Failure(_validator.StatusCode, _validator.Messages.ToArray());
+        
+        var dto = command.Input;
+        
+        var hashedPassword = _passwordHasher.HashPassword(dto.Password);
+        
+        var user = TUser.Create(
+            dto.Email, 
+            dto.Username, 
+            hashedPassword
+            );
+        
+        await _userRepository.AddAsync(user, cancellationToken);
+
+        await _unitOfWork.SaveChanges(cancellationToken);
+        
+        return OutputPort<Guid>.Success(user.Id, HttpStatusCode.Created, "User created" );
+
+    }
+}
