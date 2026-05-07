@@ -1,6 +1,6 @@
 ﻿using App.Infrastructure.Core.DataBaseContext.Connection;
 using App.Interfaces.Ports;
-using App.Objects.Common;
+using App.Shared.Query;
 using Microsoft.EntityFrameworkCore;
 
 namespace App.Infrastructure.Adapters;

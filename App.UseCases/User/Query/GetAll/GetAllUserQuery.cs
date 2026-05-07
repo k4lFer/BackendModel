@@ -1,7 +1,7 @@
-﻿using App.Interfaces.Common.Result;
-using App.Objects.Common;
-using App.Objects.User.DTOs.Input.Query;
+﻿using App.Objects.User.DTOs.Input.Query;
 using App.Objects.User.DTOs.Output.Response;
+using App.Shared.Query;
+using App.Shared.Result;
 using Cortex.Mediator.Queries;
 
 namespace App.UseCases.User.Query.GetAll;

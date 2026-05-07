@@ -13,6 +13,11 @@
 
     <ItemGroup>
       <ProjectReference Include="..\App.Interfaces\App.Interfaces.csproj" />
+      <ProjectReference Include="..\App.Shared\App.Shared.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="User\Listeners\" />
     </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-﻿using App.Objects.Common.Objects;
+﻿using App.Shared.Query;
 
 namespace App.Objects.User.DTOs.Input.Query;
 

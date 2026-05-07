@@ -1,4 +1,4 @@
-﻿using App.Interfaces.Common;
+﻿using App.Shared.Validation;
 using Cortex.Mediator.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 

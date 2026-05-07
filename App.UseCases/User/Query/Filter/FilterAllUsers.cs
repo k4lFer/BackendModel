@@ -1,5 +1,5 @@
-﻿using App.Objects.Common;
-using App.Objects.User.DTOs.Output.Response;
+﻿using App.Objects.User.DTOs.Output.Response;
+using App.Shared.Query;
 
 namespace App.UseCases.User.Query.Filter;
 

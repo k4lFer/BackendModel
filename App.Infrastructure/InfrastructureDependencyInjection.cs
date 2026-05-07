@@ -1,5 +1,6 @@
-﻿using App.Infrastructure.Adapters;
+using App.Infrastructure.Adapters;
 using App.Infrastructure.Core.DataBaseContext.Connection;
+using App.Infrastructure.Core.DataBaseContext.Interceptors;
 using App.Infrastructure.Core.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,12 +19,19 @@ public static class InfrastructureDependencyInjection
         //dataSourceBuilder.MapEnum<UserRole>("user_credential.user_role_enum");
             
         var dataSource = dataSourceBuilder.Build();
-        services.AddDbContextPool<AppDataBaseContext>(options =>
+        services.AddScoped<DomainEventDispatcherInterceptor>();
+
+        services.AddDbContextPool<AppDataBaseContext>((sp, options) =>
+        {
+            var interceptor = sp.GetRequiredService<DomainEventDispatcherInterceptor>();
+            options.AddInterceptors(interceptor);
+            
             options.UseNpgsql(dataSource, o =>
             {
                 // Enum Map
                 //o.MapEnum<UserRole>("user_role_enum", schemaName:"user_credential");
-            }));
+            });
+        });
         
         #endregion
         

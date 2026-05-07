@@ -1,7 +1,7 @@
 ﻿using System.Net;
-using App.Interfaces.Common;
-using App.Objects.Common.Objects;
 using App.Objects.User.DTOs.Input.Command;
+using App.Shared.Result;
+using App.Shared.Validation;
 
 namespace App.UseCases.User.Command.CreateUser;
 

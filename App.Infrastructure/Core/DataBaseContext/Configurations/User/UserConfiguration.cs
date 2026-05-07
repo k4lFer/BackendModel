@@ -33,6 +33,10 @@ public class UserConfiguration : IEntityTypeConfiguration<TUser>
         builder.Property(x => x.Password)
             .HasColumnName("password")
             .IsRequired();
+
+        builder.Property(x => x.IsEmailVerified)
+            .HasColumnName("is_email_verified")
+            .IsRequired();
         
         builder.Property(x => x.CreatedAt)
             .HasColumnName("created_at")
@@ -42,6 +46,12 @@ public class UserConfiguration : IEntityTypeConfiguration<TUser>
         builder.Property(x => x.UpdatedAt)
             .HasColumnName("updated_at")
             .HasColumnType("timestamptz");
+        
+        builder.HasOne(x => x.Person)
+            .WithOne()
+            .HasForeignKey<TPerson>(p => p.UserId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
 
     }
 }

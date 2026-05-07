@@ -1,16 +1,20 @@
-﻿using App.Domain.User.Entities;
+using App.Domain.User.Entities;
 using App.Infrastructure.Core.DataBaseContext.Connection;
 using App.Interfaces.Ports.User;
-using App.Objects.Common;
 using App.Objects.User.DTOs.Output.Response;
+using App.Shared.Query;
 using Microsoft.EntityFrameworkCore;
 
 namespace App.Infrastructure.Adapters.User;
 
-public class UserRepository : BaseRepository<TUser>, IUserRepository
+public class UserRepository(AppDataBaseContext dbc) : BaseRepository<TUser>(dbc), IUserRepository
 {
-    public UserRepository(AppDataBaseContext dbc) : base(dbc) { }
-
+    public async Task<TUser?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return await _dbc.Users
+            .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+    }
+    
     public async Task<QueryResult<UsersResponseDto?>> GetUsersPaged(int page, int pageSize, QueryFilter<UsersResponseDto>? filter = null)
     {
         IQueryable<UsersResponseDto> query =

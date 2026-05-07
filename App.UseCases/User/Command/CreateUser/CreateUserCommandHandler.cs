@@ -1,11 +1,12 @@
 ﻿using System.Net;
 using App.Domain.User.Entities;
-using App.Interfaces.Common;
-using App.Interfaces.Common.Result;
-using App.Interfaces.Common.Security;
+
 using App.Interfaces.Ports;
 using App.Interfaces.Ports.User;
 using App.Objects.User.DTOs.Input.Command;
+using App.Shared.Result;
+using App.Shared.Security;
+using App.Shared.Validation;
 using App.UseCases.User.Command;
 using Cortex.Mediator.Commands;
 
@@ -29,7 +30,9 @@ public class CreateUserCommandHandler : ICommandHandler<CreateUserCommand, Outpu
     public async Task<OutputPort<Guid>> Handle(CreateUserCommand command, CancellationToken cancellationToken)
     {
         if (!await _validator.ValidateAsync(command.Input, cancellationToken))
+        {
             return OutputPort<Guid>.Failure(_validator.StatusCode, _validator.Messages.ToArray());
+        }
         
         var dto = command.Input;
         
@@ -38,14 +41,17 @@ public class CreateUserCommandHandler : ICommandHandler<CreateUserCommand, Outpu
         var user = TUser.Create(
             dto.Email, 
             dto.Username, 
-            hashedPassword
+            hashedPassword,
+            dto.FirstName,
+            dto.LastName,
+            dto.DateOfBirth
             );
         
         await _userRepository.AddAsync(user, cancellationToken);
 
         await _unitOfWork.SaveChanges(cancellationToken);
         
-        return OutputPort<Guid>.Success(user.Id, HttpStatusCode.Created, "User created" );
+        return OutputPort<Guid>.Success(user.Id, HttpStatusCode.Created, "User created");
 
     }
 }

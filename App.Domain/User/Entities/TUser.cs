@@ -1,26 +1,50 @@
-﻿using App.Objects.Common.Objects;
+﻿using App.Domain.User.Events;
+using App.Shared.Domain;
 
 namespace App.Domain.User.Entities;
 
 public class TUser : BaseDomain
 {
-    public string Email { get; set; }
-    public string Username { get; set; }
-    public string Password { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime? UpdatedAt { get; set; }
+    public string Email { get; private set; }
+    public string Username { get; private set; }
+    public string Password { get; private set; }
+    public bool IsEmailVerified { get; private set; }
 
-    private TUser(string email, string username, string password,  DateTime createdAt, DateTime? updatedAt)
+    public DateTime CreatedAt { get; private set; }
+    public DateTime? UpdatedAt { get; private set; }
+
+    public TPerson Person { get; private set; }
+
+    private TUser() { } // EF Core
+
+    private TUser(string email, string username, string password, bool isEmailVerified, TPerson person)
     {
         Email = email;
         Username = username;
         Password = password;
-        CreatedAt = createdAt;
-        UpdatedAt = updatedAt;
+        IsEmailVerified = isEmailVerified;
+        Person = person;
+
+        CreatedAt = DateTime.UtcNow;
+        UpdatedAt = null;
+
     }
 
-    public static TUser Create(string email, string username, string password)
+    public static TUser Create(
+        string email,
+        string username,
+        string password,
+        string firstName,
+        string lastName,
+        DateTime dateOfBirth
+    )
     {
-        return new TUser(email, username, password,  DateTime.UtcNow, null);
+        var person = TPerson.Create(firstName, lastName, dateOfBirth);
+        
+        var user = new TUser(email, username, password, false, person);
+        
+        user.AddDomainEvent(new UserCreatedEvent(user.Id, email, username));
+        
+        return user;
     }
 }

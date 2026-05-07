@@ -1,4 +1,4 @@
-﻿using App.Infrastructure.Core.DataBaseContext.Connection;
+using App.Infrastructure.Core.DataBaseContext.Connection;
 using App.Interfaces.Ports;
 
 namespace App.Infrastructure.Adapters;

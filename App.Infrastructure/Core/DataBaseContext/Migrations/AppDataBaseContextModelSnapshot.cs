@@ -22,6 +22,48 @@ namespace App.Infrastructure.Core.DataBaseContext.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("App.Domain.User.Entities.TPerson", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("DateOfBirth")
+                        .HasColumnType("date")
+                        .HasColumnName("date_of_birth");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar")
+                        .HasColumnName("first_name");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar")
+                        .HasColumnName("last_name");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("persons", "user_credential");
+                });
+
             modelBuilder.Entity("App.Domain.User.Entities.TUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -56,6 +98,21 @@ namespace App.Infrastructure.Core.DataBaseContext.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("users", "user_credential");
+                });
+
+            modelBuilder.Entity("App.Domain.User.Entities.TPerson", b =>
+                {
+                    b.HasOne("App.Domain.User.Entities.TUser", null)
+                        .WithOne("Person")
+                        .HasForeignKey("App.Domain.User.Entities.TPerson", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("App.Domain.User.Entities.TUser", b =>
+                {
+                    b.Navigation("Person")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

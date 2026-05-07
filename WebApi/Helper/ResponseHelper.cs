@@ -1,5 +1,5 @@
 ﻿using System.Net;
-using App.Interfaces.Common.Result;
+using App.Shared.Result;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Helper;

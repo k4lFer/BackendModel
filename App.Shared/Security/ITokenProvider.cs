@@ -1,0 +1,32 @@
+using System.Security.Claims;
+using App.Shared.Objects.Enums;
+
+
+namespace App.Shared.Security;
+
+    public interface ITokenProvider
+    {
+        /// <summary>
+        /// Genera un token firmado.
+        /// </summary>
+        /// <param name="subject">Identificador principal (userId, email, invitationId, etc.)</param>
+        /// <param name="claims">Datos adicionales variables (roles, scope, expiración custom, etc.)</param>
+        /// <param name="type">Tipo de token</param>
+        /// <returns>Token generado</returns>
+        string GenerateToken(string subject, IEnumerable<Claim> claims, TokenType type);
+
+        /// <summary>
+        /// Valida si un token es correcto.
+        /// </summary>
+        bool ValidateToken(string token, TokenType type);
+
+        /// <summary>
+        /// Extrae el subject del token.
+        /// </summary>
+        string ExtractSubject(string token, TokenType type);
+
+        /// <summary>
+        /// Extrae un claim específico del token.
+        /// </summary>
+        object? ExtractClaim(string token, string claimKey, TokenType type);
+    }

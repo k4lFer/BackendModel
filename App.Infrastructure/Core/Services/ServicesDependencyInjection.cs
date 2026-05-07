@@ -1,5 +1,8 @@
-﻿using App.Infrastructure.Core.Services.Security;
-using App.Interfaces.Common.Security;
+using App.Infrastructure.Adapters.Emails;
+using App.Infrastructure.Adapters.Templates;
+using App.Infrastructure.Core.Services.Security;
+using App.Interfaces.Ports.Emails;
+using App.Shared.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,11 +12,12 @@ public static class ServicesDependencyInjection
 {
     public static IServiceCollection AddCoreServices(this IServiceCollection services, IConfiguration configuration)
     {
-        //services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
+        services.Configure<SmtpSettings>(configuration.GetSection("SmtpSettings"));
         
-        // Register services here
-        //services.AddScoped<ITokenProvider, JwtTokenProvider>();
+        services.AddScoped<ITokenProvider, JwtTokenProvider>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
+        services.AddSingleton<ITemplateRenderer, RazorTemplateRenderer>();
+        services.AddScoped<IEmailSender, MailKitEmailSender>();
         
         return services;
     }

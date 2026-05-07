@@ -1,4 +1,4 @@
-﻿using App.Interfaces.Common.Security;
+﻿using App.Shared.Security;
 
 namespace App.Infrastructure.Core.Services.Security;
 
