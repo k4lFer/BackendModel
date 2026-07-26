@@ -1,45 +1,138 @@
+using System.Collections.Concurrent;
+using System.Reflection;
+using App.Infrastructure.Core.DataBaseContext.Audit;
+using App.Infrastructure.Core.DataBaseContext.Connection;
 using App.Shared.Domain;
 using Cortex.Mediator;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace App.Infrastructure.Core.DataBaseContext.Interceptors;
 
 public sealed class DomainEventDispatcherInterceptor : SaveChangesInterceptor
 {
-    private readonly IMediator _mediator;
+    private static readonly ConcurrentDictionary<Type, MethodInfo> PublishCache = new();
+    private static readonly MethodInfo PublishMethodDef = typeof(IMediator)
+        .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+        .First(m => m.Name == nameof(IMediator.PublishAsync)
+                 && m.IsGenericMethodDefinition
+                 && m.GetParameters().Length == 2);
 
-    public DomainEventDispatcherInterceptor(IMediator mediator)
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly AsyncLocal<List<(BaseEvent Event, Guid AuditId)>?> _currentPayload = new();
+
+    public DomainEventDispatcherInterceptor(IServiceScopeFactory scopeFactory)
     {
-        _mediator = mediator;
+        _scopeFactory = scopeFactory;
+    }
+
+    public override InterceptionResult<int> SavingChanges(
+        DbContextEventData eventData,
+        InterceptionResult<int> result)
+    {
+        CaptureEvents(eventData.Context);
+        return base.SavingChanges(eventData, result);
+    }
+
+    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+        DbContextEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
+    {
+        CaptureEvents(eventData.Context);
+        return base.SavingChangesAsync(eventData, result, cancellationToken);
+    }
+
+    private void CaptureEvents(DbContext? context)
+    {
+        if (context is null)
+            return;
+
+        var entries = context.ChangeTracker
+            .Entries<BaseDomain>()
+            .Where(x => x.Entity.DomainEvents.Count != 0)
+            .ToArray();
+
+        if (entries.Length == 0)
+            return;
+
+        var payload = new List<(BaseEvent, Guid)>();
+
+        foreach (var entry in entries)
+        {
+            var events = entry.Entity.DomainEvents.ToList();
+            entry.Entity.ClearDomainEvents();
+
+            foreach (var @event in events)
+            {
+                var audit = new AuditMessage(@event);
+                context.Set<AuditMessage>().Add(audit);
+                payload.Add((@event, audit.Id));
+            }
+        }
+
+        _currentPayload.Value = payload;
+    }
+
+    public override int SavedChanges(
+        SaveChangesCompletedEventData eventData,
+        int result)
+    {
+        DispatchEventsAsync(default).GetAwaiter().GetResult();
+        return result;
     }
 
     public override async ValueTask<int> SavedChangesAsync(
-        SaveChangesCompletedEventData eventData, 
-        int result, 
+        SaveChangesCompletedEventData eventData,
+        int result,
         CancellationToken cancellationToken = default)
     {
-        if (eventData.Context is null) return await base.SavedChangesAsync(eventData, result, cancellationToken);
+        await DispatchEventsAsync(cancellationToken);
+        return result;
+    }
 
-        // 1. Extraemos las entidades que tienen eventos
-        var domainEntities = eventData.Context.ChangeTracker
-            .Entries<BaseDomain>()
-            .Where(x => x.Entity.DomainEvents.Any())
-            .ToList();
+    private async Task DispatchEventsAsync(CancellationToken cancellationToken)
+    {
+        var payload = _currentPayload.Value;
+        _currentPayload.Value = null;
 
-        // 2. Extraemos los eventos
-        var domainEvents = domainEntities
-            .SelectMany(x => x.Entity.DomainEvents)
-            .ToList();
+        if (payload is null || payload.Count == 0)
+            return;
 
-        // 3. Limpiamos los eventos de la memoria local
-        domainEntities.ForEach(entity => entity.Entity.ClearDomainEvents());
+        using var scope = _scopeFactory.CreateScope();
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<DomainEventDispatcherInterceptor>>();
 
-        // 4. Emitimos los eventos a todos los manejadores (ej. el que enviará el email)
-        foreach (var domainEvent in domainEvents)
+        foreach (var (@event, auditId) in payload)
         {
-            await _mediator.PublishAsync(domainEvent, cancellationToken);
-        }
+            try
+            {
+                var eventType = @event.GetType();
+                var method = PublishCache.GetOrAdd(eventType, t => PublishMethodDef.MakeGenericMethod(t));
+                await (Task)method.Invoke(mediator, [@event, cancellationToken])!;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Event {EventType} publish failed. AuditId: {AuditId}", @event.GetType().Name, auditId);
 
-        return await base.SavedChangesAsync(eventData, result, cancellationToken);
+                try
+                {
+                    using var ctxScope = _scopeFactory.CreateScope();
+                    var ctx = ctxScope.ServiceProvider.GetRequiredService<AppDataBaseContext>();
+                    var audit = await ctx.AuditMessages.FindAsync([auditId], cancellationToken);
+                    if (audit is not null)
+                    {
+                        audit.Error = $"{ex.GetType().Name}: {ex.Message}";
+                        await ctx.SaveChangesAsync(cancellationToken);
+                    }
+                }
+                catch (Exception inner)
+                {
+                    logger.LogError(inner, "Failed to persist audit error for {AuditId}", auditId);
+                }
+            }
+        }
     }
 }

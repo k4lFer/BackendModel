@@ -11,6 +11,9 @@ public static class AdapterDependencyInjection
     {
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IUserQueryRepository, UserQueryRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IRefreshTokenQueryRepository, RefreshTokenQueryRepository>();
             
         return services;
     }

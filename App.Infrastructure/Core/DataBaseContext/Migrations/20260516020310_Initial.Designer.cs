@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace App.Infrastructure.Core.DataBaseContext.Migrations
 {
     [DbContext(typeof(AppDataBaseContext))]
-    [Migration("20260425230156_Initial")]
+    [Migration("20260516020310_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -83,6 +83,10 @@ namespace App.Infrastructure.Core.DataBaseContext.Migrations
                         .HasColumnType("varchar")
                         .HasColumnName("email");
 
+                    b.Property<bool>("IsEmailVerified")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_email_verified");
+
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("text")
@@ -101,6 +105,42 @@ namespace App.Infrastructure.Core.DataBaseContext.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("users", "user_credential");
+                });
+
+            modelBuilder.Entity("App.Infrastructure.Core.DataBaseContext.Audit.AuditMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("content");
+
+                    b.Property<string>("Error")
+                        .HasColumnType("text")
+                        .HasColumnName("error");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("occurred_at_utc");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OccurredAtUtc")
+                        .HasDatabaseName("ix_domain_events_occurred_at_utc");
+
+                    b.HasIndex("Type")
+                        .HasDatabaseName("ix_domain_events_type");
+
+                    b.ToTable("domain_events", "audit");
                 });
 
             modelBuilder.Entity("App.Domain.User.Entities.TPerson", b =>

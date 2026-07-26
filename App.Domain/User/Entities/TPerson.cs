@@ -8,14 +8,14 @@ public class TPerson
 
     public string FirstName { get; private set; }
     public string LastName { get; private set; }
-    public DateTime DateOfBirth { get; private set; }
+    public DateOnly DateOfBirth { get; private set; }
 
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
     private TPerson() { } // EF Core
 
-    private TPerson(string firstName, string lastName, DateTime dateOfBirth)
+    private TPerson(string firstName, string lastName, DateOnly dateOfBirth)
     {
         Id = Guid.NewGuid();
         FirstName = firstName;
@@ -26,7 +26,7 @@ public class TPerson
         UpdatedAt = null;
     }
 
-    internal static TPerson Create(string firstName, string lastName, DateTime dateOfBirth)
+    internal static TPerson Create(string firstName, string lastName, DateOnly dateOfBirth)
     {
         return new TPerson(firstName, lastName, dateOfBirth);
     }

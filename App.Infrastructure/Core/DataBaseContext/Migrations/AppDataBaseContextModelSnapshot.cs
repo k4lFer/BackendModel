@@ -64,6 +64,57 @@ namespace App.Infrastructure.Core.DataBaseContext.Migrations
                     b.ToTable("persons", "user_credential");
                 });
 
+            modelBuilder.Entity("App.Domain.User.Entities.TRefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar")
+                        .HasColumnName("device_id");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("varchar")
+                        .HasColumnName("ip_address");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar")
+                        .HasColumnName("token_hash");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar")
+                        .HasColumnName("user_agent");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("refresh_tokens", "user_credential");
+                });
+
             modelBuilder.Entity("App.Domain.User.Entities.TUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -80,9 +131,13 @@ namespace App.Infrastructure.Core.DataBaseContext.Migrations
                         .HasColumnType("varchar")
                         .HasColumnName("email");
 
+                    b.Property<bool>("IsEmailVerified")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_email_verified");
+
                     b.Property<string>("Password")
-                        .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar")
                         .HasColumnName("password");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -100,6 +155,75 @@ namespace App.Infrastructure.Core.DataBaseContext.Migrations
                     b.ToTable("users", "user_credential");
                 });
 
+            modelBuilder.Entity("App.Domain.User.Entities.TUserGateway", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar")
+                        .HasColumnName("provider");
+
+                    b.Property<string>("ProviderId")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("varchar")
+                        .HasColumnName("provider_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("user_gateways", "user_credential");
+                });
+
+            modelBuilder.Entity("App.Infrastructure.Core.DataBaseContext.Audit.AuditMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("content");
+
+                    b.Property<string>("Error")
+                        .HasColumnType("text")
+                        .HasColumnName("error");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("occurred_at_utc");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OccurredAtUtc")
+                        .HasDatabaseName("ix_domain_events_occurred_at_utc");
+
+                    b.HasIndex("Type")
+                        .HasDatabaseName("ix_domain_events_type");
+
+                    b.ToTable("domain_events", "audit");
+                });
+
             modelBuilder.Entity("App.Domain.User.Entities.TPerson", b =>
                 {
                     b.HasOne("App.Domain.User.Entities.TUser", null)
@@ -109,10 +233,36 @@ namespace App.Infrastructure.Core.DataBaseContext.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("App.Domain.User.Entities.TRefreshToken", b =>
+                {
+                    b.HasOne("App.Domain.User.Entities.TUser", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("App.Domain.User.Entities.TUserGateway", b =>
+                {
+                    b.HasOne("App.Domain.User.Entities.TUser", "User")
+                        .WithMany("UserGateways")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("App.Domain.User.Entities.TUser", b =>
                 {
                     b.Navigation("Person")
                         .IsRequired();
+
+                    b.Navigation("RefreshTokens");
+
+                    b.Navigation("UserGateways");
                 });
 #pragma warning restore 612, 618
         }

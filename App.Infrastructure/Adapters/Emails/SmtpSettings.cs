@@ -2,10 +2,11 @@ namespace App.Infrastructure.Adapters.Emails;
 
 public class SmtpSettings
 {
-    public string Server { get; set; } = default!;
+    public string Host { get; set; } = default!;
     public int Port { get; set; }
     public string SenderName { get; set; } = default!;
-    public string SenderEmail { get; set; } = default!;
     public string Username { get; set; } = default!;
     public string Password { get; set; } = default!;
+    public string From { get; set; } = default!;
+    public bool UseSsl { get; set; } = true;
 }

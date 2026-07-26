@@ -1,22 +1,30 @@
 using App.Interfaces.Ports.Emails;
-using RazorLight;
 
 namespace App.Infrastructure.Adapters.Templates;
 
-public class RazorTemplateRenderer : ITemplateRenderer
+public class HtmlTemplateRenderer : ITemplateRenderer
 {
-    private readonly IRazorLightEngine _engine;
+    private readonly string _templatesPath;
 
-    public RazorTemplateRenderer()
+    public HtmlTemplateRenderer()
     {
-        _engine = new RazorLightEngineBuilder()
-            .UseFileSystemProject(Path.Combine(AppContext.BaseDirectory, "Templates"))
-            .UseMemoryCachingProvider()
-            .Build();
+        _templatesPath = Path.Combine(AppContext.BaseDirectory, "Templates");
     }
 
     public async Task<string> RenderAsync<TModel>(string templateName, TModel model)
     {
-        return await _engine.CompileRenderAsync(templateName, model);
+        var filePath = Path.Combine(_templatesPath, templateName);
+        var content = await File.ReadAllTextAsync(filePath);
+
+        if (model is null) return content;
+
+        foreach (var prop in model.GetType().GetProperties())
+        {
+            var key = $"{{{{{prop.Name}}}}}";
+            var value = prop.GetValue(model)?.ToString() ?? "";
+            content = content.Replace(key, value);
+        }
+
+        return content;
     }
 }

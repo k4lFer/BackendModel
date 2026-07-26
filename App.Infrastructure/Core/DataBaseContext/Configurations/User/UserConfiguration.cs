@@ -32,7 +32,8 @@ public class UserConfiguration : IEntityTypeConfiguration<TUser>
 
         builder.Property(x => x.Password)
             .HasColumnName("password")
-            .IsRequired();
+            .HasColumnType("varchar")
+            .HasMaxLength(255);
 
         builder.Property(x => x.IsEmailVerified)
             .HasColumnName("is_email_verified")

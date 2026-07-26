@@ -20,13 +20,13 @@ public class MailKitEmailSender : IEmailSender
     public async Task SendAsync(EmailMessage message, CancellationToken ct = default)
     {
         var email = new MimeMessage();
-        email.From.Add(new MailboxAddress(_settings.SenderName, _settings.SenderEmail));
+        email.From.Add(new MailboxAddress(_settings.SenderName, _settings.From));
         email.To.Add(MailboxAddress.Parse(message.To));
         email.Subject = message.Subject;
         email.Body = new TextPart(TextFormat.Html) { Text = message.BodyHtml };
 
         using var smtp = new SmtpClient();
-        await smtp.ConnectAsync(_settings.Server, _settings.Port, SecureSocketOptions.StartTls, ct);
+        await smtp.ConnectAsync(_settings.Host, _settings.Port, SecureSocketOptions.StartTls, ct);
         await smtp.AuthenticateAsync(_settings.Username, _settings.Password, ct);
         await smtp.SendAsync(email, ct);
         await smtp.DisconnectAsync(true, ct);

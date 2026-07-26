@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+
 namespace App.Infrastructure;
 
 public static class InfrastructureDependencyInjection
@@ -15,26 +16,20 @@ public static class InfrastructureDependencyInjection
         #region DataBase Context
         var connectionString = configuration.GetConnectionString("PostgresSQLConnectionString");
         var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connectionString);
-        // Enum Map
-        //dataSourceBuilder.MapEnum<UserRole>("user_credential.user_role_enum");
             
         var dataSource = dataSourceBuilder.Build();
-        services.AddScoped<DomainEventDispatcherInterceptor>();
-
-        services.AddDbContextPool<AppDataBaseContext>((sp, options) =>
+        services.AddSingleton(dataSource);
+        services.AddSingleton<DomainEventDispatcherInterceptor>();
+        services.AddDbContextPool<AppDataBaseContext>((_, options) =>
         {
-            var interceptor = sp.GetRequiredService<DomainEventDispatcherInterceptor>();
+            var ds = _.GetRequiredService<Npgsql.NpgsqlDataSource>();
+            var interceptor = _.GetRequiredService<DomainEventDispatcherInterceptor>();
+
             options.AddInterceptors(interceptor);
-            
-            options.UseNpgsql(dataSource, o =>
-            {
-                // Enum Map
-                //o.MapEnum<UserRole>("user_role_enum", schemaName:"user_credential");
-            });
+            options.UseNpgsql(ds, o => { });
         });
         
         #endregion
-        
         
         services.AddAdapterDependencies();
         services.AddCoreServices(configuration);

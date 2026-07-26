@@ -3,6 +3,7 @@ using App.Infrastructure.Adapters.Templates;
 using App.Infrastructure.Core.Services.Security;
 using App.Interfaces.Ports.Emails;
 using App.Shared.Security;
+using Cortex.Mediator.Notifications;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,9 +17,11 @@ public static class ServicesDependencyInjection
         
         services.AddScoped<ITokenProvider, JwtTokenProvider>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
-        services.AddSingleton<ITemplateRenderer, RazorTemplateRenderer>();
+        services.AddScoped<ITokenHasher, TokenHasher>();
+        services.AddSingleton<ITemplateRenderer, HtmlTemplateRenderer>();
         services.AddScoped<IEmailSender, MailKitEmailSender>();
-        
+        services.AddScoped<IEventBus, EventBus>();
+
         return services;
     }
 }

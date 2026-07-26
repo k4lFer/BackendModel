@@ -24,7 +24,7 @@ namespace WebApi
 
             // Note: Your JWT configuration uses RoleClaimType = ClaimTypes.Role.
             // You should be consistent in how you create and read claims.
-            Guid id = Guid.Parse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            Guid id = Guid.Parse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
             var role = user.FindFirst(ClaimTypes.Role)?.Value;
 
             if (id == Guid.Empty || string.IsNullOrEmpty(role)) return null;

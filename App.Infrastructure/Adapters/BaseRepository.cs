@@ -14,7 +14,7 @@ public abstract class BaseRepository<TDomain> : IBaseRepository<TDomain> where T
         _dbc = dbc;
     }
     
-    protected async Task<QueryResult<T?>> PaginateAsync<T>(
+    protected async Task<QueryResult<T>> PaginateAsync<T>(
         IQueryable<T> query,
         int? pageNumber,
         int? pageSize,
@@ -34,7 +34,7 @@ public abstract class BaseRepository<TDomain> : IBaseRepository<TDomain> where T
             .AsNoTracking()
             .ToListAsync(ct);
 
-        return QueryResult<T?>.Success(
+        return QueryResult<T>.Success(
             results: items,
             totalCount: totalCount,
             totalPages: totalPages,

@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using App.Domain.User.Entities;
+using App.Interfaces.Ports;
 using App.Interfaces.Ports.User;
 using App.Objects.User.DTOs.Input.Command;
 using App.Objects.User.DTOs.Output.Response;
@@ -7,26 +9,34 @@ using App.Shared.Result;
 using App.Shared.Security;
 using App.Shared.Validation;
 using Cortex.Mediator.Commands;
-using System.Security.Claims;
 
 namespace App.UseCases.Auth.Command.Login;
 
 public class LoginCommandHandler : ICommandHandler<LoginCommand, OutputPort<LoginResponseDto>>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenProvider _tokenProvider;
+    private readonly ITokenHasher _tokenHasher;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IInputValidator<LoginDto> _validator;
     
     public LoginCommandHandler(
         IUserRepository userRepository,
+        IRefreshTokenRepository refreshTokenRepository,
         IPasswordHasher passwordHasher,
         ITokenProvider tokenProvider,
+        ITokenHasher tokenHasher,
+        IUnitOfWork unitOfWork,
         IInputValidator<LoginDto> validator)
     {
         _userRepository = userRepository;
+        _refreshTokenRepository = refreshTokenRepository;
         _passwordHasher = passwordHasher;
         _tokenProvider = tokenProvider;
+        _tokenHasher = tokenHasher;
+        _unitOfWork = unitOfWork;
         _validator = validator;
     }
     
@@ -49,17 +59,33 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, OutputPort<Logi
             );
         }
         
+        var deviceId = dto.DeviceId ?? Guid.NewGuid().ToString();
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.Name, user.Username),
             new Claim(ClaimTypes.Email, user.Email)
         };
         
-        var token = _tokenProvider.GenerateToken(user.Id.ToString(), claims, TokenType.Access);
+        var accessToken = _tokenProvider.GenerateToken(user.Id.ToString(), claims, TokenType.Access);
+        var refreshToken = _tokenProvider.GenerateToken(user.Id.ToString(), claims, TokenType.Refresh);
+        var refreshTokenHash = _tokenHasher.Hash(refreshToken);
+        
+        var refreshTokenEntity = TRefreshToken.Create(
+            user.Id,
+            deviceId,
+            refreshTokenHash,
+            expiresAt: null,
+            command.IpAddress,
+            command.UserAgent
+        );
+        
+        await _refreshTokenRepository.AddAsync(refreshTokenEntity, cancellationToken);
+        await _unitOfWork.SaveChanges(cancellationToken);
         
         var response = new LoginResponseDto
         {
-            Token = token,
+            Token = accessToken,
+            RefreshToken = refreshToken,
             UserId = user.Id,
             Email = user.Email,
             Username = user.Username
