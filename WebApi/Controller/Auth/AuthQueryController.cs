@@ -11,6 +11,7 @@ namespace WebApi.Controller.Auth;
 [ApiController]
 [Route("api/auth")]
 [Tags("Auth")]
+[Produces("application/json")]
 public class AuthQueryController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -22,8 +23,7 @@ public class AuthQueryController : ControllerBase
         _currentUser = currentUser;
     }
 
-    [HttpGet]
-    [Route("[action]")]
+    [HttpGet("sessions")]
     [Authorize]
     [EndpointSummary("Sesiones activas")]
     [EndpointDescription("Devuelve las sesiones activas del usuario actual, con filtros opcionales")]
@@ -31,7 +31,7 @@ public class AuthQueryController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetActiveSessions(
         [FromQuery] ActiveSessionFilterDto filter,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
         var userClaims = _currentUser.GetClaim();
         if (userClaims is null) return Unauthorized();
