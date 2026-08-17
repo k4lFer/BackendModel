@@ -26,11 +26,18 @@ public class UserQueryController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetUserInfo(CancellationToken cancellationToken)
     {
+        return null;
+    }
+
+    [HttpGet]
+    [Route("[action]")]
+    [Authorize]
+    public async Task<IActionResult> MyProfile(CancellationToken cancellationToken)
+    {
         var userClaims = _currentUser.GetClaim();
         if (userClaims is null) return Unauthorized();
         var query = new MyProfileQuery(userClaims.Id);
         var result = await _mediator.SendQueryAsync(query, cancellationToken);
         return ResponseHelper.GetActionResult(result);
     }
-
 }

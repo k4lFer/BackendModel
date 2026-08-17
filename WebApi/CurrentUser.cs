@@ -27,7 +27,7 @@ namespace WebApi
             Guid id = Guid.Parse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
             var role = user.FindFirst(ClaimTypes.Role)?.Value;
 
-            if (id == Guid.Empty || string.IsNullOrEmpty(role)) return null;
+            //if (id == Guid.Empty || string.IsNullOrEmpty(role)) return null;
 
             return new UserClaims(id, role);
         }

@@ -5,12 +5,17 @@ using WebApi.Config;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using WebApi.Scalar;
+using App.Shared.Security;
+using WebApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSecurityConfiguration(builder.Configuration, builder.Environment);
 builder.Services.AddScalarConfiguration();
 builder.Services.AddControllers();
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddUseCasesDi();
