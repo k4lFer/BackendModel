@@ -2,9 +2,11 @@ using App.Objects.User.DTOs.Input.Command;
 using App.Shared.Security;
 using App.UseCases.Auth.Command.Login;
 using App.UseCases.Auth.Command.RefreshToken;
+using App.UseCases.Auth.Command.ResendVerification;
 using App.UseCases.Auth.Command.RevokeSession;
 using App.UseCases.Auth.Command.RevokeAllSessions;
 using App.UseCases.Auth.Command.SignUp;
+using App.UseCases.Auth.Command.VerifyEmail;
 using Cortex.Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -37,6 +39,32 @@ public class AuthCommandController : ControllerBase
     public async Task<IActionResult> SignUp([FromBody] SignUpDto dto, CancellationToken cancellationToken)
     {
         var command = new SignUpCommand(dto);
+        var result = await _mediator.SendCommandAsync(command, cancellationToken);
+        return ResponseHelper.GetActionResult(result);
+    }
+
+    [HttpPost("verify-email")]
+    [AllowAnonymous]
+    [EndpointSummary("Verificar correo electrónico")]
+    [EndpointDescription("Confirma la cuenta usando el token del enlace o el código OTP recibido por email")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto dto, CancellationToken cancellationToken)
+    {
+        var command = new VerifyEmailCommand(dto);
+        var result = await _mediator.SendCommandAsync(command, cancellationToken);
+        return ResponseHelper.GetActionResult(result);
+    }
+
+    [HttpPost("resend-verification")]
+    [AllowAnonymous]
+    [EndpointSummary("Reenviar correo de verificación")]
+    [EndpointDescription("Genera un nuevo token y código OTP, invalida los anteriores y reenvía el email")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationDto dto, CancellationToken cancellationToken)
+    {
+        var command = new ResendVerificationCommand(dto);
         var result = await _mediator.SendCommandAsync(command, cancellationToken);
         return ResponseHelper.GetActionResult(result);
     }

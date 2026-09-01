@@ -72,7 +72,7 @@ public class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCommand, O
             user.Id,
             storedToken.DeviceId,
             newRefreshTokenHash,
-            expiresAt: null,
+            expiresAt: _tokenProvider.GetExpiration(TokenType.Refresh),
             storedToken.IpAddress,
             storedToken.UserAgent
         );

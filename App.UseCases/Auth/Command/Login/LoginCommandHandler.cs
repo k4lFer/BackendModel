@@ -58,6 +58,14 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, OutputPort<Logi
                 new MessageDto(code: "INVALID_CREDENTIALS", message: "Invalid email or password.")
             );
         }
+
+        if (!user.IsEmailVerified)
+        {
+            return OutputPort<LoginResponseDto>.Failure(
+                System.Net.HttpStatusCode.Forbidden,
+                new MessageDto(code: "EMAIL_NOT_VERIFIED", message: "You must verify your email before signing in.")
+            );
+        }
         
         var deviceId = dto.DeviceId ?? Guid.NewGuid().ToString();
         var claims = new List<Claim>
@@ -74,7 +82,7 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, OutputPort<Logi
             user.Id,
             deviceId,
             refreshTokenHash,
-            expiresAt: null,
+            expiresAt: _tokenProvider.GetExpiration(TokenType.Refresh),
             command.IpAddress,
             command.UserAgent
         );

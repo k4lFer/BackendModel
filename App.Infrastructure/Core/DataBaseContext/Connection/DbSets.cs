@@ -11,6 +11,7 @@ public partial class AppDataBaseContext
     public DbSet<TPerson> Persons { get; set; }
     public DbSet<TRefreshToken> RefreshTokens { get; set; }
     public DbSet<TUserGateway> UserGateways { get; set; }
+    public DbSet<TEmailVerification> EmailVerifications { get; set; }
     public DbSet<AuditMessage> AuditMessages { get; set; }
     public DbSet<TNotification> Notifications { get; set; }
 }

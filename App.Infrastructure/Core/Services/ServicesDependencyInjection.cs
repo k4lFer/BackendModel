@@ -2,6 +2,7 @@ using App.Infrastructure.Adapters.Emails;
 using App.Infrastructure.Adapters.Templates;
 using App.Infrastructure.Core.Services.Security;
 using App.Interfaces.Ports.Emails;
+using App.Interfaces.Ports.User;
 using App.Shared.Security;
 using Cortex.Mediator.Notifications;
 using Microsoft.Extensions.Configuration;
@@ -18,6 +19,8 @@ public static class ServicesDependencyInjection
         services.AddScoped<ITokenProvider, JwtTokenProvider>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<ITokenHasher, TokenHasher>();
+        services.AddScoped<IVerificationCodeGenerator, VerificationCodeGenerator>();
+        services.AddScoped<IVerificationFactory, VerificationFactory>();
         services.AddSingleton<ITemplateRenderer, HtmlTemplateRenderer>();
         services.AddScoped<IEmailSender, MailKitEmailSender>();
         services.AddScoped<IEventBus, EventBus>();

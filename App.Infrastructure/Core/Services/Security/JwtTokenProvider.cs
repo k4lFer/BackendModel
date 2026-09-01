@@ -44,7 +44,7 @@ public class JwtTokenProvider : ITokenProvider
         return new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
     }
 
-    private DateTime GetExpiration(TokenType type)
+    public DateTime GetExpiration(TokenType type)
     {
         return type switch
         {

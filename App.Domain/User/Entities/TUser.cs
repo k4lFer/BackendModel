@@ -53,4 +53,10 @@ public class TUser : BaseDomain
         
         return user;
     }
+
+    public void MarkEmailVerified()
+    {
+        IsEmailVerified = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }

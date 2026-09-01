@@ -16,6 +16,11 @@ namespace App.Shared.Security;
         string GenerateToken(string subject, IEnumerable<Claim> claims, TokenType type);
 
         /// <summary>
+        /// Devuelve la fecha de expiración configurada para un tipo de token.
+        /// </summary>
+        DateTime GetExpiration(TokenType type);
+
+        /// <summary>
         /// Valida si un token es correcto.
         /// </summary>
         bool ValidateToken(string token, TokenType type);
