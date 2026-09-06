@@ -23,7 +23,8 @@ public static class ScalarConfiguration
                 
                 return Task.CompletedTask;
             });
-            options.AddDocumentTransformer<BearerSecuritySchemeTransformer>(); 
+            options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+            options.AddOperationTransformer<BearerSecurityRequirementTransformer>(); 
         });
         
         return services;

@@ -29,7 +29,7 @@ public class UserQueryController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetUserInfo(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetUserInfo([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         return null;
     }

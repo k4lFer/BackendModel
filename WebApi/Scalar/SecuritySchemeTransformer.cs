@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
@@ -24,18 +25,41 @@ internal sealed class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvi
 
             document.Components ??= new OpenApiComponents();
             document.Components.SecuritySchemes = requirements;
+        }
+    }
+}
 
-            foreach (var path in document.Paths.Values)
+internal sealed class BearerSecurityRequirementTransformer : IOpenApiOperationTransformer
+{
+    private readonly IAuthenticationSchemeProvider _authenticationSchemeProvider;
+
+    public BearerSecurityRequirementTransformer(IAuthenticationSchemeProvider authenticationSchemeProvider)
+    {
+        _authenticationSchemeProvider = authenticationSchemeProvider;
+    }
+
+    public async Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
+    {
+        var authenticationSchemes = await _authenticationSchemeProvider.GetAllSchemesAsync();
+        if (authenticationSchemes.Any(authScheme => authScheme.Name == "Bearer"))
+        {
+            var requiresAuth = context.Description
+                .ActionDescriptor
+                .EndpointMetadata
+                .Any(metadata => metadata is AuthorizeAttribute)
+                && !context.Description
+                    .ActionDescriptor
+                    .EndpointMetadata
+                    .Any(metadata => metadata is AllowAnonymousAttribute);
+
+            if (requiresAuth)
             {
-                foreach (var operation in path.Operations.Values)
-                {
-                    operation.Security ??= new List<OpenApiSecurityRequirement>();
+                operation.Security ??= new List<OpenApiSecurityRequirement>();
 
-                    operation.Security.Add(new OpenApiSecurityRequirement
-                    {
-                        [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
-                    });
-                }
+                operation.Security.Add(new OpenApiSecurityRequirement
+                {
+                    [new OpenApiSecuritySchemeReference("Bearer", context.Document)] = new List<string>()
+                });
             }
         }
     }
