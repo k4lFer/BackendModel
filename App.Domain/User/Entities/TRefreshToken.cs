@@ -10,6 +10,7 @@ public class TRefreshToken
     public string? UserAgent { get; private set; }
     public DateTime? ExpiresAt { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public DateTime LastActivityAt { get; private set; }
     public DateTime? RevokedAt { get; private set; }
 
     public TUser User { get; private set; }
@@ -32,6 +33,7 @@ public class TRefreshToken
         UserAgent = userAgent;
         ExpiresAt = expiresAt;
         CreatedAt = DateTime.UtcNow;
+        LastActivityAt = DateTime.UtcNow;
         RevokedAt = null;
     }
 
@@ -52,4 +54,7 @@ public class TRefreshToken
     }
 
     public bool IsActive => RevokedAt is null && (ExpiresAt is null || ExpiresAt > DateTime.UtcNow);
+
+    public bool IsExpiredByInactivity(DateTime now, TimeSpan inactivityWindow)
+        => LastActivityAt.Add(inactivityWindow) < now;
 }

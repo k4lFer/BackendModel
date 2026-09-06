@@ -54,6 +54,11 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<TRefreshToken>
             .HasColumnType("timestamptz")
             .IsRequired();
 
+        builder.Property(x => x.LastActivityAt)
+            .HasColumnName("last_activity_at")
+            .HasColumnType("timestamptz")
+            .IsRequired();
+
         builder.Property(x => x.RevokedAt)
             .HasColumnName("revoked_at")
             .HasColumnType("timestamptz"); 

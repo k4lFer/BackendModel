@@ -1,6 +1,7 @@
 using App.Objects.User.DTOs.Input.Command;
 using App.Shared.Security;
 using App.UseCases.Auth.Command.Login;
+using App.UseCases.Auth.Command.Logout;
 using App.UseCases.Auth.Command.RefreshToken;
 using App.UseCases.Auth.Command.ResendVerification;
 using App.UseCases.Auth.Command.RevokeSession;
@@ -101,15 +102,17 @@ public class AuthCommandController : ControllerBase
 
     [HttpPost("logout")]
     [Authorize]
-    [EndpointSummary("Cerrar sesión (revocar dispositivo actual)")]
-    [EndpointDescription("Revoca el refresh token del dispositivo actual")]
+    [EndpointSummary("Cerrar sesión (dispositivo actual)")]
+    [EndpointDescription("Revoca únicamente la sesión del dispositivo actual (identificado por el header X-Device-Id)")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
         var userClaims = _currentUser.GetClaim();
         if (userClaims is null) return Unauthorized();
-        var command = new RevokeAllSessionsCommand(userClaims.Id);
+        var deviceId = HttpContext.Request.Headers["X-Device-Id"].FirstOrDefault();
+        var command = new LogoutCommand(userClaims.Id, deviceId);
         var result = await _mediator.SendCommandAsync(command, cancellationToken);
         return ResponseHelper.GetActionResult(result);
     }
@@ -132,15 +135,16 @@ public class AuthCommandController : ControllerBase
 
     [HttpDelete("sessions")]
     [Authorize]
-    [EndpointSummary("Cerrar todas las sesiones")]
-    [EndpointDescription("Revoca todos los refresh tokens activos del usuario")]
+    [EndpointSummary("Cerrar todas las sesiones excepto la actual")]
+    [EndpointDescription("Revoca todos los refresh tokens activos del usuario excepto el del dispositivo actual (enviado en el header X-Device-Id)")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RevokeAllSessions(CancellationToken cancellationToken)
     {
         var userClaims = _currentUser.GetClaim();
         if (userClaims is null) return Unauthorized();
-        var command = new RevokeAllSessionsCommand(userClaims.Id);
+        var deviceId = HttpContext.Request.Headers["X-Device-Id"].FirstOrDefault();
+        var command = new RevokeAllSessionsCommand(userClaims.Id, deviceId);
         var result = await _mediator.SendCommandAsync(command, cancellationToken);
         return ResponseHelper.GetActionResult(result);
     }

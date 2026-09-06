@@ -1,10 +1,12 @@
+using App.Shared.Objects.Enums;
+
 namespace App.Domain.Notifications.Entities;
 
 public class TNotification
 {
     public Guid Id { get; private set; }
     public Guid UserId { get; private set; }
-    public string Type { get; private set; } = default!;
+    public NotificationType Type { get; private set; }
     public string Title { get; private set; } = default!;
     public string Content { get; private set; } = default!;
     public bool IsRead { get; private set; }
@@ -13,7 +15,7 @@ public class TNotification
 
     private TNotification() { }
 
-    private TNotification(Guid userId, string type, string title, string content)
+    private TNotification(Guid userId, NotificationType type, string title, string content)
     {
         Id = Guid.NewGuid();
         UserId = userId;
@@ -25,7 +27,7 @@ public class TNotification
         SentAt = null;
     }
 
-    public static TNotification Create(Guid userId, string type, string title, string content)
+    public static TNotification Create(Guid userId, NotificationType type, string title, string content)
     {
         return new TNotification(userId, type, title, content);
     }

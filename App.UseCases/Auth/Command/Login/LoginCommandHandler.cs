@@ -67,6 +67,8 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, OutputPort<Logi
             );
         }
         
+        await _refreshTokenRepository.RevokeExpiredUserTokensAsync(user.Id, DateTime.UtcNow, _tokenProvider.RefreshInactivityWindow(), cancellationToken);
+
         var deviceId = dto.DeviceId ?? Guid.NewGuid().ToString();
         var claims = new List<Claim>
         {
@@ -96,7 +98,8 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, OutputPort<Logi
             RefreshToken = refreshToken,
             UserId = user.Id,
             Email = user.Email,
-            Username = user.Username
+            Username = user.Username,
+            DeviceId = deviceId
         };
         
         return OutputPort<LoginResponseDto>.Success(response, System.Net.HttpStatusCode.OK, "Login successful");

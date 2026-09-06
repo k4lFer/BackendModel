@@ -43,9 +43,6 @@ public class EmailVerificationConfiguration : IEntityTypeConfiguration<TEmailVer
 
         builder.Property(x => x.Type)
             .HasColumnName("type")
-            .HasConversion<string>()
-            .HasColumnType("varchar")
-            .HasMaxLength(30)
             .IsRequired();
 
         builder.Property(x => x.LinkExpiresAt)

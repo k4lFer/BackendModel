@@ -25,8 +25,6 @@ public class NotificationConfiguration : IEntityTypeConfiguration<TNotification>
         
         builder.Property(x => x.Type)
             .HasColumnName("type")
-            .HasColumnType("varchar")
-            .HasMaxLength(50)
             .IsRequired();
         
         builder.Property(x => x.Title)

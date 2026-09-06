@@ -15,13 +15,42 @@ public class RefreshTokenRepository : BaseRepository<TRefreshToken>, IRefreshTok
             .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash, cancellationToken);
     }
 
-    public async Task RevokeAllUserTokensAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task RevokeAllUserTokensAsync(Guid userId, string? excludeDeviceId = null, CancellationToken cancellationToken = default)
     {
         var activeTokens = await _dbc.RefreshTokens
-            .Where(rt => rt.UserId == userId && rt.RevokedAt == null)
+            .Where(rt => rt.UserId == userId
+                && rt.RevokedAt == null
+                && (string.IsNullOrEmpty(excludeDeviceId) || rt.DeviceId != excludeDeviceId))
             .ToListAsync(cancellationToken);
 
         foreach (var token in activeTokens)
+        {
+            token.Revoke();
+        }
+    }
+
+    public async Task RevokeTokensByDeviceAsync(Guid userId, string deviceId, CancellationToken cancellationToken = default)
+    {
+        var activeTokens = await _dbc.RefreshTokens
+            .Where(rt => rt.UserId == userId && rt.DeviceId == deviceId && rt.RevokedAt == null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var token in activeTokens)
+        {
+            token.Revoke();
+        }
+    }
+
+    public async Task RevokeExpiredUserTokensAsync(Guid userId, DateTime now, TimeSpan inactivityWindow, CancellationToken cancellationToken = default)
+    {
+        var expiredActiveTokens = await _dbc.RefreshTokens
+            .Where(rt => rt.UserId == userId
+                && rt.RevokedAt == null
+                && (rt.ExpiresAt != null && rt.ExpiresAt < now
+                    || rt.LastActivityAt.Add(inactivityWindow) < now))
+            .ToListAsync(cancellationToken);
+
+        foreach (var token in expiredActiveTokens)
         {
             token.Revoke();
         }

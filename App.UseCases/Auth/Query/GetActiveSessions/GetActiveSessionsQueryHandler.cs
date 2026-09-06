@@ -3,6 +3,7 @@ using App.Interfaces.Ports.User;
 using App.Objects.User.DTOs.Output.Response;
 using App.Shared.Query;
 using App.Shared.Result;
+using App.Shared.Security;
 using App.UseCases.Auth.Filter;
 using Cortex.Mediator.Queries;
 
@@ -11,10 +12,14 @@ namespace App.UseCases.Auth.Query.GetActiveSessions;
 public class GetActiveSessionsQueryHandler : IQueryHandler<GetActiveSessionsQuery, OutputPort<QueryResult<ActiveSessionDto>>>
 {
     private readonly IRefreshTokenQueryRepository _refreshTokenQueryRepository;
+    private readonly ITokenProvider _tokenProvider;
 
-    public GetActiveSessionsQueryHandler(IRefreshTokenQueryRepository refreshTokenQueryRepository)
+    public GetActiveSessionsQueryHandler(
+        IRefreshTokenQueryRepository refreshTokenQueryRepository,
+        ITokenProvider tokenProvider)
     {
         _refreshTokenQueryRepository = refreshTokenQueryRepository;
+        _tokenProvider = tokenProvider;
     }
 
     public async Task<OutputPort<QueryResult<ActiveSessionDto>>> Handle(GetActiveSessionsQuery query, CancellationToken cancellationToken)
@@ -23,7 +28,9 @@ public class GetActiveSessionsQueryHandler : IQueryHandler<GetActiveSessionsQuer
         {
             FromDate = query.Filter.FromDate,
             ToDate = query.Filter.ToDate,
-            DeviceId = query.Filter.DeviceId
+            DeviceId = query.Filter.DeviceId,
+            Status = query.Filter.Status,
+            InactivityCutoffAt = DateTime.UtcNow.Subtract(_tokenProvider.RefreshInactivityWindow())
         };
 
         var results = await _refreshTokenQueryRepository.GetActiveSessionsAsync(

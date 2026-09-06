@@ -2,6 +2,7 @@ using App.Domain.User.Entities;
 using App.Infrastructure.Core.DataBaseContext.Connection;
 using App.Interfaces.Ports.User;
 using App.Objects.User.DTOs.Output.Response;
+using App.Shared.Objects.Enums;
 using App.Shared.Query;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,10 +14,11 @@ public class RefreshTokenQueryRepository : BaseRepository<TRefreshToken>, IRefre
 
     public async Task<QueryResult<ActiveSessionDto>> GetActiveSessionsAsync(
         Guid userId, int page, int pageSize, string? currentDeviceId = null,
-        QueryFilter<ActiveSessionDto>? filter = null, CancellationToken cancellationToken = default)
+        QueryFilter<ActiveSessionDto>? filter = null,
+        CancellationToken cancellationToken = default)
     {
         var query = _dbc.RefreshTokens
-            .Where(rt => rt.UserId == userId && rt.RevokedAt == null && (rt.ExpiresAt == null || rt.ExpiresAt > DateTime.UtcNow))
+            .Where(rt => rt.UserId == userId)
             .OrderByDescending(rt => rt.CreatedAt)
             .Select(rt => new ActiveSessionDto
             {
@@ -25,7 +27,9 @@ public class RefreshTokenQueryRepository : BaseRepository<TRefreshToken>, IRefre
                 IpAddress = rt.IpAddress,
                 UserAgent = rt.UserAgent,
                 CreatedAt = rt.CreatedAt,
+                LastActivityAt = rt.LastActivityAt,
                 ExpiresAt = rt.ExpiresAt,
+                RevokedAt = rt.RevokedAt,
                 IsCurrentDevice = rt.DeviceId == currentDeviceId
             });
 

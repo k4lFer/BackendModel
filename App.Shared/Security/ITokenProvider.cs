@@ -21,6 +21,11 @@ namespace App.Shared.Security;
         DateTime GetExpiration(TokenType type);
 
         /// <summary>
+        /// Devuelve la ventana de días configurada para expirar sesiones por inactividad (sliding).
+        /// </summary>
+        TimeSpan RefreshInactivityWindow();
+
+        /// <summary>
         /// Valida si un token es correcto.
         /// </summary>
         bool ValidateToken(string token, TokenType type);

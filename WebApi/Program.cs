@@ -15,6 +15,14 @@ builder.Services.AddScalarConfiguration();
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendDev", policy =>
+        policy.WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -37,6 +45,7 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
+app.UseCors("FrontendDev");
 app.UseAuthentication();
 app.UseAuthorization();
 

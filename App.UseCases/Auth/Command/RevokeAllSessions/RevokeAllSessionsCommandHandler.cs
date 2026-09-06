@@ -21,7 +21,7 @@ public class RevokeAllSessionsCommandHandler : ICommandHandler<RevokeAllSessions
 
     public async Task<OutputPort<object>> Handle(RevokeAllSessionsCommand command, CancellationToken cancellationToken)
     {
-        await _refreshTokenRepository.RevokeAllUserTokensAsync(command.UserId, cancellationToken);
+        await _refreshTokenRepository.RevokeAllUserTokensAsync(command.UserId, command.DeviceId, cancellationToken);
         await _unitOfWork.SaveChanges(cancellationToken);
 
         return OutputPort<object>.Success(

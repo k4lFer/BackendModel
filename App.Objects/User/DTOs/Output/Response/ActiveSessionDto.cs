@@ -9,6 +9,9 @@ public record ActiveSessionDto (
     public string? IpAddress { get; set; }
     public string? UserAgent { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime LastActivityAt { get; set; }
     public DateTime? ExpiresAt { get; set; }
+    public DateTime? RevokedAt { get; set; }
     public bool IsCurrentDevice { get; set; }
+    public bool IsRevoked => RevokedAt.HasValue;
 }

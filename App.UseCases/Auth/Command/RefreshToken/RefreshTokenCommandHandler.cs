@@ -39,11 +39,36 @@ public class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCommand, O
 
         var storedToken = await _refreshTokenRepository.GetByTokenHashAsync(tokenHash, cancellationToken);
 
-        if (storedToken is null || !storedToken.IsActive)
+        if (storedToken is null)
         {
             return OutputPort<LoginResponseDto>.Failure(
                 System.Net.HttpStatusCode.Unauthorized,
                 new MessageDto(code: "INVALID_REFRESH_TOKEN", message: "The refresh token is invalid or has been revoked.")
+            );
+        }
+
+        var expiredByInactivity = storedToken.IsExpiredByInactivity(DateTime.UtcNow, _tokenProvider.RefreshInactivityWindow());
+
+        if (!storedToken.IsActive)
+        {
+            if (storedToken.RevokedAt is null)
+                storedToken.Revoke();
+            await _unitOfWork.SaveChanges(cancellationToken);
+
+            return OutputPort<LoginResponseDto>.Failure(
+                System.Net.HttpStatusCode.Unauthorized,
+                new MessageDto(code: "INVALID_REFRESH_TOKEN", message: "The refresh token is invalid or has been revoked.")
+            );
+        }
+
+        if (expiredByInactivity)
+        {
+            storedToken.Revoke();
+            await _unitOfWork.SaveChanges(cancellationToken);
+
+            return OutputPort<LoginResponseDto>.Failure(
+                System.Net.HttpStatusCode.Unauthorized,
+                new MessageDto(code: "SESSION_EXPIRED_INACTIVITY", message: "Your session expired due to inactivity.")
             );
         }
 
@@ -86,7 +111,8 @@ public class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCommand, O
             RefreshToken = newRefreshToken,
             UserId = user.Id,
             Email = user.Email,
-            Username = user.Username
+            Username = user.Username,
+            DeviceId = storedToken.DeviceId
         };
 
         return OutputPort<LoginResponseDto>.Success(response, System.Net.HttpStatusCode.OK, "Token refreshed successfully");

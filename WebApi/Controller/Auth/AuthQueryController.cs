@@ -25,8 +25,8 @@ public class AuthQueryController : ControllerBase
 
     [HttpGet("sessions")]
     [Authorize]
-    [EndpointSummary("Sesiones activas")]
-    [EndpointDescription("Devuelve las sesiones activas del usuario actual, con filtros opcionales")]
+    [EndpointSummary("Sesiones del usuario")]
+    [EndpointDescription("Devuelve las sesiones del usuario actual. Por defecto solo las activas. Usa el parámetro Status: Active (1), Revoked (2) o All (3).")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetActiveSessions(

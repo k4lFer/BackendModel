@@ -68,6 +68,13 @@ public class JwtTokenProvider : ITokenProvider
         };
     }
 
+    public TimeSpan RefreshInactivityWindow()
+    {
+        return TimeSpan.FromDays(
+            double.Parse(_configuration["Jwt:RefreshTokenInactivityDays"] ?? "30")
+        );
+    }
+
     public string GenerateToken(string subject, IEnumerable<Claim> claims, TokenType type)
     {
         var securityKey = GetSecurityKey(type);
