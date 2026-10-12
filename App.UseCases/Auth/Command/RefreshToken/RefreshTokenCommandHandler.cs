@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using App.Domain.User.Entities;
 using App.Interfaces.Ports;
+using App.Interfaces.Ports.Auth;
 using App.Interfaces.Ports.User;
 using App.Objects.User.DTOs.Output.Response;
 using App.Shared.Objects.Enums;
@@ -17,30 +18,43 @@ public class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCommand, O
     private readonly IUserRepository _userRepository;
     private readonly ITokenHasher _tokenHasher;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITokenCookieService _tokenCookieService;
 
     public RefreshTokenCommandHandler(
         ITokenProvider tokenProvider,
         IRefreshTokenRepository refreshTokenRepository,
         IUserRepository userRepository,
         ITokenHasher tokenHasher,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ITokenCookieService tokenCookieService)
     {
         _tokenProvider = tokenProvider;
         _refreshTokenRepository = refreshTokenRepository;
         _userRepository = userRepository;
         _tokenHasher = tokenHasher;
         _unitOfWork = unitOfWork;
+        _tokenCookieService = tokenCookieService;
     }
 
     public async Task<OutputPort<LoginResponseDto>> Handle(RefreshTokenCommand command, CancellationToken cancellationToken)
     {
-        var rawToken = command.Dto.RefreshToken;
+        var rawToken = _tokenCookieService.GetTokenCookie();
+
+        if (string.IsNullOrEmpty(rawToken))
+        {
+            return OutputPort<LoginResponseDto>.Failure(
+                System.Net.HttpStatusCode.Unauthorized,
+                new MessageDto(code: "INVALID_REFRESH_TOKEN", message: "The refresh token is invalid or has been revoked.")
+            );
+        }
+
         var tokenHash = _tokenHasher.Hash(rawToken);
 
         var storedToken = await _refreshTokenRepository.GetByTokenHashAsync(tokenHash, cancellationToken);
 
         if (storedToken is null)
         {
+            _tokenCookieService.RemoveTokenCookie();
             return OutputPort<LoginResponseDto>.Failure(
                 System.Net.HttpStatusCode.Unauthorized,
                 new MessageDto(code: "INVALID_REFRESH_TOKEN", message: "The refresh token is invalid or has been revoked.")
@@ -54,6 +68,7 @@ public class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCommand, O
             if (storedToken.RevokedAt is null)
                 storedToken.Revoke();
             await _unitOfWork.SaveChanges(cancellationToken);
+            _tokenCookieService.RemoveTokenCookie();
 
             return OutputPort<LoginResponseDto>.Failure(
                 System.Net.HttpStatusCode.Unauthorized,
@@ -65,6 +80,7 @@ public class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCommand, O
         {
             storedToken.Revoke();
             await _unitOfWork.SaveChanges(cancellationToken);
+            _tokenCookieService.RemoveTokenCookie();
 
             return OutputPort<LoginResponseDto>.Failure(
                 System.Net.HttpStatusCode.Unauthorized,
@@ -75,6 +91,7 @@ public class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCommand, O
         var user = await _userRepository.GetByIdAsync(storedToken.UserId, cancellationToken);
         if (user is null)
         {
+            _tokenCookieService.RemoveTokenCookie();
             return OutputPort<LoginResponseDto>.Failure(
                 System.Net.HttpStatusCode.Unauthorized,
                 new MessageDto(code: "USER_NOT_FOUND", message: "User not found.")
@@ -105,10 +122,11 @@ public class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCommand, O
         await _refreshTokenRepository.AddAsync(newRefreshTokenEntity, cancellationToken);
         await _unitOfWork.SaveChanges(cancellationToken);
 
+        _tokenCookieService.SetTokenCookie(newRefreshToken);
+
         var response = new LoginResponseDto
         {
             Token = newAccessToken,
-            RefreshToken = newRefreshToken,
             UserId = user.Id,
             Email = user.Email,
             Username = user.Username,

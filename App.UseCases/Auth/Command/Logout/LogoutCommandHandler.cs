@@ -1,5 +1,6 @@
 using System.Net;
 using App.Interfaces.Ports;
+using App.Interfaces.Ports.Auth;
 using App.Interfaces.Ports.User;
 using App.Shared.Result;
 using Cortex.Mediator.Commands;
@@ -10,13 +11,16 @@ public class LogoutCommandHandler : ICommandHandler<LogoutCommand, OutputPort<ob
 {
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITokenCookieService _tokenCookieService;
 
     public LogoutCommandHandler(
         IRefreshTokenRepository refreshTokenRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ITokenCookieService tokenCookieService)
     {
         _refreshTokenRepository = refreshTokenRepository;
         _unitOfWork = unitOfWork;
+        _tokenCookieService = tokenCookieService;
     }
 
     public async Task<OutputPort<object>> Handle(LogoutCommand command, CancellationToken cancellationToken)
@@ -31,6 +35,7 @@ public class LogoutCommandHandler : ICommandHandler<LogoutCommand, OutputPort<ob
 
         await _refreshTokenRepository.RevokeTokensByDeviceAsync(command.UserId, command.DeviceId, cancellationToken);
         await _unitOfWork.SaveChanges(cancellationToken);
+        _tokenCookieService.RemoveTokenCookie();
 
         return OutputPort<object>.Success(
             data: null,

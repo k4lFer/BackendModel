@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using App.Domain.User.Entities;
 using App.Interfaces.Ports;
+using App.Interfaces.Ports.Auth;
 using App.Interfaces.Ports.User;
 using App.Objects.User.DTOs.Input.Command;
 using App.Objects.User.DTOs.Output.Response;
@@ -20,6 +21,7 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, OutputPort<Logi
     private readonly ITokenProvider _tokenProvider;
     private readonly ITokenHasher _tokenHasher;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITokenCookieService _tokenCookieService;
     private readonly IInputValidator<LoginDto> _validator;
     
     public LoginCommandHandler(
@@ -29,6 +31,7 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, OutputPort<Logi
         ITokenProvider tokenProvider,
         ITokenHasher tokenHasher,
         IUnitOfWork unitOfWork,
+        ITokenCookieService tokenCookieService,
         IInputValidator<LoginDto> validator)
     {
         _userRepository = userRepository;
@@ -37,6 +40,7 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, OutputPort<Logi
         _tokenProvider = tokenProvider;
         _tokenHasher = tokenHasher;
         _unitOfWork = unitOfWork;
+        _tokenCookieService = tokenCookieService;
         _validator = validator;
     }
     
@@ -95,12 +99,14 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, OutputPort<Logi
         var response = new LoginResponseDto
         {
             Token = accessToken,
-            RefreshToken = refreshToken,
+            //RefreshToken = refreshToken,
             UserId = user.Id,
             Email = user.Email,
             Username = user.Username,
             DeviceId = deviceId
         };
+
+        _tokenCookieService.SetTokenCookie(refreshToken);
         
         return OutputPort<LoginResponseDto>.Success(response, System.Net.HttpStatusCode.OK, "Login successful");
     }

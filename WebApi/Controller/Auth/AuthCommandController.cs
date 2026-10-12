@@ -93,9 +93,9 @@ public class AuthCommandController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> RefreshToken(CancellationToken cancellationToken)
     {
-        var command = new RefreshTokenCommand(dto);
+        var command = new RefreshTokenCommand();
         var result = await _mediator.SendCommandAsync(command, cancellationToken);
         return ResponseHelper.GetActionResult(result);
     }

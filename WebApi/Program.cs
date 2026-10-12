@@ -20,7 +20,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("FrontendDev", policy =>
         policy.WithOrigins("http://localhost:5173")
             .AllowAnyHeader()
-            .AllowAnyMethod());
+            .AllowAnyMethod()
+            .AllowCredentials());
 });
 
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
